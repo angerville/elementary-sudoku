@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>스도쿠 만들기</title>
+<title>스도쿠</title>
 <style>
   :root {
     --accent: #3b6fd6;
@@ -16,8 +16,10 @@
     --correct: #2e9e5b;
     --peer: #eef2fb;
     --hint: #2e9e5b;
+    --cell-size: 44px;
   }
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { touch-action: manipulation; }
   body {
     margin: 0;
     padding: 24px 16px 60px;
@@ -99,10 +101,10 @@
     background: var(--border-dark);
   }
   .cell {
-    width: 44px;
-    height: 44px;
+    width: var(--cell-size);
+    height: var(--cell-size);
     text-align: center;
-    font-size: 1.2rem;
+    font-size: calc(var(--cell-size) * 0.42);
     border: none;
     outline: none;
     background: #fff;
@@ -222,13 +224,12 @@
   #message.bad { color: var(--wrong); }
 
   @media (max-width: 560px) {
-    .cell { width: 34px; height: 34px; font-size: 1rem; }
     #side-panel { width: 100%; max-width: 320px; }
   }
 </style>
 </head>
 <body>
-  <h1>초등 스도쿠 만들기</h1>
+  <h1>스도쿠</h1>
 
   <div class="panel">
     <div class="control-row">
@@ -381,19 +382,28 @@
     return document.querySelector(`.cell[data-row="${r}"][data-col="${c}"]`);
   }
 
+  function computeCellSize() {
+    const { size } = state;
+    const maxBoardWidth = Math.min(window.innerWidth - 32, 460);
+    const raw = Math.floor(maxBoardWidth / size);
+    const cellSize = Math.max(30, Math.min(46, raw));
+    document.documentElement.style.setProperty('--cell-size', cellSize + 'px');
+  }
+
   function renderBoard() {
     const { size, puzzle } = state;
     const { boxH, boxW } = boxDims(size);
+    computeCellSize();
     const board = document.getElementById('board');
     board.innerHTML = '';
-    board.style.gridTemplateColumns = `repeat(${size}, 44px)`;
-    board.style.gridTemplateRows = `repeat(${size}, 44px)`;
+    board.style.gridTemplateColumns = `repeat(${size}, var(--cell-size))`;
+    board.style.gridTemplateRows = `repeat(${size}, var(--cell-size))`;
 
     for (let r = 0; r < size; r++) {
       for (let c = 0; c < size; c++) {
         const input = document.createElement('input');
         input.className = 'cell';
-        input.setAttribute('inputmode', 'numeric');
+        input.setAttribute('inputmode', 'none');
         input.maxLength = 1;
         input.dataset.row = r;
         input.dataset.col = c;
@@ -606,6 +616,12 @@
   document.getElementById('reset-btn').addEventListener('click', resetPuzzle);
   document.getElementById('erase-btn').addEventListener('click', eraseSelected);
   document.getElementById('hint-btn').addEventListener('click', useHint);
+
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(computeCellSize, 100);
+  });
 
   newPuzzle();
 })();
